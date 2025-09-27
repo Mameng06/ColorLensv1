@@ -41,13 +41,13 @@ const App: React.FC = () => {
   };
 
   const handleNavigateToYT = () => {
-    // Disabled: YouTube embed not needed for now. Keep as stub.
-    console.log('YT navigation is disabled in this build');
-    setCurrentScreen('decision');
+    // Navigate to the YouTube embed screen
+    console.log('handleNavigateToYT called — navigating to youtube screen');
+    setCurrentScreen('youtube');
   };
 
   const handleBackFromYT = () => {
-    // Stubbed: no-op since YouTube screen is disabled
+    // Return to decision screen
     setCurrentScreen('decision');
   };
 
@@ -86,7 +86,9 @@ const App: React.FC = () => {
             onSimulateCDO={handleSimulateCDO}
           />
         )}
-        {/* Disabled screens removed for now to keep JSX simple */}
+        {currentScreen === 'youtube' && (
+          <YTembedScreen onBack={handleBackFromYT} />
+        )}
       </View>
     </SafeAreaProvider>
   );

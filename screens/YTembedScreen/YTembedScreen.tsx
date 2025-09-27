@@ -8,7 +8,7 @@ interface YTembedScreenProps {
 
 const YTembedScreen: React.FC<YTembedScreenProps> = ({ onBack }) => {
   // Replace with your actual YouTube video ID
-  const youtubeVideoId = 'dQw4w9WgXcQ'; // Example video ID
+  const youtubeVideoId = 'qIkLXRTS6Ik'; // Example video ID
   const youtubeUrl = `https://www.youtube.com/embed/${youtubeVideoId}`;
 
   // Lazy-load WebView to avoid typecheck/build failures when package is not installed
