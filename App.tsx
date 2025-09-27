@@ -19,6 +19,8 @@ import SplashScreen from './screens/SplashScreen/SplashScreen';
 import WelcomeScreen from './screens/WelcomeScreen/WelcomeScreen';
 import DecisionScreen from './screens/DecisionScreen/DecisionScreen';
 import YTembedScreen from './screens/YTembedScreen/YTembedScreen';
+import ColorDetector from './screens/ColorDetector/ColorDetector';
+import CLSetting from './screens/CLSetting/CLSetting';
 // Disabled for now - feature screens commented out to simplify development
 // import YTembedScreen from './screens/YTembedScreen/YTembedScreen';
 // import ColorDetector from './screens/ColorDetector/ColorDetector';
@@ -52,9 +54,9 @@ const App: React.FC = () => {
   };
 
   const handleDetectColors = () => {
-    // Disabled: Color detector temporarily turned off
-    console.log('Color detector is disabled in this build');
-    setCurrentScreen('decision');
+    // Navigate to the Color Detector screen
+    console.log('Navigating to ColorDetector screen');
+    setCurrentScreen('colorDetector');
   };
 
   const handleColorBlindCamera = () => {
@@ -84,6 +86,18 @@ const App: React.FC = () => {
             onDetectColors={handleDetectColors}
             onColorBlindCamera={handleColorBlindCamera}
             onSimulateCDO={handleSimulateCDO}
+          />
+        )}
+        {currentScreen === 'colorDetector' && (
+          <ColorDetector onBack={() => setCurrentScreen('decision')} openSettings={() => setCurrentScreen('settings')} voiceEnabled={voiceEnabled} colorCodesVisible={colorCodesVisible} />
+        )}
+        {currentScreen === 'settings' && (
+          <CLSetting
+            onBack={() => setCurrentScreen('colorDetector')}
+            voiceEnabled={voiceEnabled}
+            colorCodesVisible={colorCodesVisible}
+            onToggleVoice={(v: boolean) => setVoiceEnabled(v)}
+            onToggleColorCodes={(v: boolean) => setColorCodesVisible(v)}
           />
         )}
         {currentScreen === 'youtube' && (
