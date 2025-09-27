@@ -27,6 +27,9 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
   const intervalRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
   const previewLayout = useRef<{x:number,y:number,width:number,height:number}>({ x:0,y:0,width:0,height:0 });
+  const previewRef = useRef<any>(null);
+  const cameraContainerRef = useRef<any>(null);
+  const [previewSize, setPreviewSize] = useState<{width:number,height:number} | null>(null);
   const [cameraPermission, setCameraPermission] = useState<string | null>(null);
   // We'll discover devices explicitly using the VisionCamera APIs (getAvailableCameraDevices)
   const [availableDevices, setAvailableDevices] = useState<any[] | null>(null);
@@ -133,15 +136,14 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
     } else {
       // when freezing, set crosshair to center initially
       // center will be computed based on preview size; fallback to center of cameraArea via styles
+      // measure the preview wrapper in window coordinates then set center
       setTimeout(() => {
         try {
-          // attempt to compute center using previewLayout if available
-          if (previewLayout.current && previewLayout.current.width > 0) {
-            const cx = previewLayout.current.width / 2;
-            const cy = previewLayout.current.height / 2;
-            setCrosshairPos({ x: cx, y: cy });
-          } else {
-            setCrosshairPos(null);
+          if (previewRef.current && previewRef.current.measureInWindow) {
+            previewRef.current.measureInWindow((px: number, py: number, pw: number, ph: number) => {
+              previewLayout.current = { x: px, y: py, width: pw, height: ph };
+              setCrosshairPos({ x: pw / 2, y: ph / 2 });
+            });
           }
         } catch (e) { setCrosshairPos(null); }
       }, 50);
@@ -149,15 +151,27 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
   };
 
   const onScreenPress = (e: any) => {
-    const { locationX, locationY } = e.nativeEvent as { locationX:number; locationY:number };
     // Only allow moving the crosshair when frame is frozen
     if (!freeze) return;
 
-    // update crosshair position relative to cameraArea
-    setCrosshairPos({ x: locationX, y: locationY });
-    // when frozen, tapping selects a new sampled color at that point
-    const c = getRandomColor();
-    setDetected(c);
+    // Use absolute page coordinates and measure preview position to compute relative point
+    const pageX = e.nativeEvent.pageX as number;
+    const pageY = e.nativeEvent.pageY as number;
+    try {
+      if (previewRef.current && previewRef.current.measureInWindow) {
+        previewRef.current.measureInWindow((px: number, py: number, pw: number, ph: number) => {
+          previewLayout.current = { x: px, y: py, width: pw, height: ph };
+          const relX = Math.max(0, Math.min(pw, pageX - px));
+          const relY = Math.max(0, Math.min(ph, pageY - py));
+          setCrosshairPos({ x: relX, y: relY });
+          // when frozen, tapping selects a new sampled color at that point
+          const c = getRandomColor();
+          setDetected(c);
+        });
+      }
+    } catch (err) {
+      console.log('measure failed', err);
+    }
   };
 
   const requestCameraPermission = async () => {
@@ -200,13 +214,24 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
       {/* Camera area (placeholder image) */}
       <TouchableWithoutFeedback onPress={onScreenPress}>
         <View style={styles.cameraArea}>
+          {/* preview wrapper measured for crosshair coordinate mapping */}
+          <View style={{ width: '100%', alignItems: 'center', position: 'relative' }}>
           {/* Prefer react-native-camera RNCamera if present */}
           {RNCamera ? (
-            <RNCamera
-              style={styles.cameraPreview}
-              type={RNCamera.Constants.Type.back}
-              captureAudio={false}
-            />
+            <View ref={cameraContainerRef} style={styles.cameraPreviewContainer} onLayout={(e)=>{
+              try {
+                const { width: pw, height: ph } = e.nativeEvent.layout;
+                previewLayout.current.width = pw;
+                previewLayout.current.height = ph;
+                setPreviewSize({ width: pw, height: ph });
+              } catch (err) { /* ignore */ }
+            }}>
+              <RNCamera
+                style={styles.cameraInner}
+                type={RNCamera.Constants.Type.back}
+                captureAudio={false}
+              />
+            </View>
           ) : VisionCamera ? (
             // VisionCamera rendering: use the hook result computed at top-level (`device`)
             (() => {
@@ -224,10 +249,21 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
 
               // If we do have a device (from explicit discovery or the hook), render it
               const finalDevice = availableDevice;
-              if (finalDevice) {
+                if (finalDevice) {
                 try {
                   const CameraComp = VisionCamera.Camera;
-                  return <CameraComp ref={cameraRef} style={styles.cameraPreview} device={finalDevice} isActive={!freeze} />;
+                  return (
+                    <View ref={cameraContainerRef} style={styles.cameraPreviewContainer} onLayout={(e)=>{
+                      try {
+                        const { width: pw, height: ph } = e.nativeEvent.layout;
+                        previewLayout.current.width = pw;
+                        previewLayout.current.height = ph;
+                        setPreviewSize({ width: pw, height: ph });
+                      } catch (err) { /* ignore */ }
+                    }}>
+                      <CameraComp ref={cameraRef} style={styles.cameraInner} device={finalDevice} isActive={!freeze} />
+                    </View>
+                  );
                 } catch (e) {
                   console.log('VisionCamera render error', e);
                 }
@@ -255,25 +291,29 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
             </View>
           )}
 
-          {/* Crosshair: always show full crosshair lines. Show red center dot centered by default, or at crosshairPos when frozen */}
-          <View pointerEvents="none">
-            <View style={styles.crosshairVertical} />
-            <View style={styles.crosshairHorizontal} />
-          </View>
+            {/* Crosshair: full white lines (vertical + horizontal) placed relative to preview */}
+            <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: previewSize?.width ?? '100%', height: previewSize?.height ?? '100%' }}>
+              {previewSize && (
+                <>
+                  <View style={[styles.crosshairVertical, { left: Math.round(previewSize.width / 2) - 1, height: previewSize.height }]} />
+                  <View style={[styles.crosshairHorizontal, { top: Math.round(previewSize.height / 2) - 1, width: previewSize.width }]} />
+                </>
+              )}
 
-          {/* Red dot: show centered when not moved, or at crosshairPos when freeze is true */}
-          {freeze && crosshairPos ? (
-            <View pointerEvents="none" style={[styles.crosshairContainer, { left: crosshairPos.x - 10, top: crosshairPos.y - 10 }]}>
-              <View style={styles.crosshairDot} />
+              {/* Red dot: centered by default, or placed at crosshairPos when frozen */}
+              {freeze && crosshairPos ? (
+                <View pointerEvents="none" style={[styles.crosshairContainer, { left: crosshairPos.x - 10, top: crosshairPos.y - 10 }]}>
+                  <View style={styles.crosshairDot} />
+                </View>
+              ) : (
+                previewSize && (
+                  <View pointerEvents="none" style={[styles.crosshairContainer, { left: Math.round(previewSize.width / 2) - 10, top: Math.round(previewSize.height / 2) - 10 }]}>
+                    <View style={styles.crosshairDot} />
+                  </View>
+                )
+              )}
             </View>
-          ) : (
-            <View pointerEvents="none" style={[styles.crosshairContainer, { left: (styles.cameraPreview.width ? 0 : 0) }]}>
-              {/* center dot: absolute center via percent positioning */}
-              <View style={[{ position: 'absolute', left: (availableDevice ? '50%' : '50%'), top: '50%', transform: [{ translateX: -5 }, { translateY: -5 }] }]}>
-                <View style={styles.crosshairDot} />
-              </View>
-            </View>
-          )}
+          </View>
         </View>
       </TouchableWithoutFeedback>
 

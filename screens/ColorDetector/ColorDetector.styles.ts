@@ -13,14 +13,19 @@ export const styles = StyleSheet.create({
   // Add horizontal padding so the preview sits visually centered with even white space.
   cameraArea: { flex: 1, justifyContent: 'flex-start', alignItems: 'center', backgroundColor: '#fff', position: 'relative', paddingTop: 8, paddingHorizontal: 16 },
   // Use a precise pixel width (screen width minus horizontal padding) so the preview centers exactly.
-  cameraPreview: { width: width - 32, alignSelf: 'center', aspectRatio: 4 / 3, borderRadius: 8, overflow: 'hidden', backgroundColor: '#000', position: 'relative' },
-  cameraFallback: { backgroundColor: '#F2F2F2', justifyContent: 'center', alignItems: 'center', width: width - 32, aspectRatio: 4 / 3, borderRadius: 8 },
+  // Responsive preview: fill available width inside the cameraArea padding, but don't exceed screen width minus padding
+  cameraPreview: { width: '100%', maxWidth: width - 32, alignSelf: 'center', aspectRatio: 4 / 3, borderRadius: 8, overflow: 'hidden', backgroundColor: '#000', position: 'relative' },
+  cameraFallback: { backgroundColor: '#F2F2F2', justifyContent: 'center', alignItems: 'center', width: '100%', maxWidth: width - 32, aspectRatio: 4 / 3, borderRadius: 8 },
   cameraFallbackText: { color: '#666', fontSize: 14 },
   permissionButton: { marginTop: 12, backgroundColor: '#2B7FFF', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8 },
   permissionButtonText: { color: '#fff', fontWeight: '700' },
-  // Crosshair: two white lines (vertical & horizontal) and a red central dot with white border
-  crosshairVertical: { position: 'absolute', width: 2, height: 20000, backgroundColor: '#fff', left: '50%', top: 0, transform: [{ translateX: -1 }] },
-  crosshairHorizontal: { position: 'absolute', height: 2, width: 20000, backgroundColor: '#fff', top: '50%', left: 0, transform: [{ translateY: -1 }] },
+  // Crosshair base: lines will be sized at render time to match the preview size
+  crosshairVertical: { position: 'absolute', width: 2, backgroundColor: '#fff' },
+  crosshairHorizontal: { position: 'absolute', height: 2, backgroundColor: '#fff' },
+  // Container for the preview area (keeps even margins and centers inner preview)
+  cameraPreviewContainer: { width: '100%', maxWidth: width - 32, alignSelf: 'center', aspectRatio: 4 / 3, borderRadius: 8, overflow: 'hidden', backgroundColor: '#000', position: 'relative' },
+  // Inner preview fills the container (used for RNCamera or VisionCamera component)
+  cameraInner: { width: '100%', height: '100%' },
   crosshairContainer: { position: 'absolute', width: 20, height: 20, justifyContent: 'center', alignItems: 'center', left: 0, top: 0 },
   crosshairDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'red', borderWidth: 2, borderColor: '#fff' },
   infoArea: { padding: 20 },
