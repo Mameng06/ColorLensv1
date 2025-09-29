@@ -1,14 +1,4 @@
 /**
- * ColorLens - AI Based Color Recognition and Voice Feedback Assistant App
- * 
- * Tech Stack:
- * - React Native CLI
- * - TypeScript
- * - OpenCV for camera processing
- * - TensorFlow Lite for AI model inference
- * - React Native TTS for voice feedback
- * - libDaltonLens for daltonization algorithms test
- *
  * @format
  */
 
@@ -17,7 +7,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SplashScreen from './screens/SplashScreen/SplashScreen';
 import WelcomeScreen from './screens/WelcomeScreen/WelcomeScreen';
-import DecisionScreen from './screens/DecisionScreen/DecisionScreen';
+// DecisionScreen removed; its FAB moved into CLSetting
 import YTembedScreen from './screens/YTembedScreen/YTembedScreen';
 import ColorDetector from './screens/ColorDetector/ColorDetector';
 import CLSetting from './screens/CLSetting/CLSetting';
@@ -33,13 +23,15 @@ const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<'splash' | 'welcome' | 'decision' | 'youtube' | 'main' | 'colorDetector' | 'settings' | 'cbc' | 'simulate'>('splash');
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [colorCodesVisible, setColorCodesVisible] = useState(true);
+  const [voiceMode, setVoiceMode] = useState<'family' | 'real' | 'disable'>('family');
 
   const handleSplashFinish = () => {
     setCurrentScreen('welcome');
   };
 
   const handleWelcomeNext = () => {
-    setCurrentScreen('decision');
+    // Skip decision screen — go straight to ColorDetector
+    setCurrentScreen('colorDetector');
   };
 
   const handleNavigateToYT = () => {
@@ -49,26 +41,14 @@ const App: React.FC = () => {
   };
 
   const handleBackFromYT = () => {
-    // Return to decision screen
-    setCurrentScreen('decision');
+    // DecisionScreen removed: return to ColorDetector
+    setCurrentScreen('colorDetector');
   };
 
   const handleDetectColors = () => {
     // Navigate to the Color Detector screen
     console.log('Navigating to ColorDetector screen');
     setCurrentScreen('colorDetector');
-  };
-
-  const handleColorBlindCamera = () => {
-    // Disabled: Color-blind camera feature turned off
-    console.log('Color-blind camera is disabled in this build');
-    setCurrentScreen('decision');
-  };
-
-  const handleSimulateCDO = () => {
-    // Disabled: Simulation feature turned off
-    console.log('Simulation is disabled in this build');
-    setCurrentScreen('decision');
   };
 
   return (
@@ -80,24 +60,19 @@ const App: React.FC = () => {
         {currentScreen === 'welcome' && (
           <WelcomeScreen onNext={handleWelcomeNext} />
         )}
-        {currentScreen === 'decision' && (
-          <DecisionScreen
-            onNavigateToYT={handleNavigateToYT}
-            onDetectColors={handleDetectColors}
-            onColorBlindCamera={handleColorBlindCamera}
-            onSimulateCDO={handleSimulateCDO}
-          />
-        )}
         {currentScreen === 'colorDetector' && (
-          <ColorDetector onBack={() => setCurrentScreen('decision')} openSettings={() => setCurrentScreen('settings')} voiceEnabled={voiceEnabled} colorCodesVisible={colorCodesVisible} />
+          <ColorDetector onBack={() => setCurrentScreen('welcome')} openSettings={() => setCurrentScreen('settings')} voiceEnabled={voiceEnabled} colorCodesVisible={colorCodesVisible} voiceMode={voiceMode} />
         )}
         {currentScreen === 'settings' && (
           <CLSetting
             onBack={() => setCurrentScreen('colorDetector')}
             voiceEnabled={voiceEnabled}
             colorCodesVisible={colorCodesVisible}
+            voiceMode={voiceMode}
             onToggleVoice={(v: boolean) => setVoiceEnabled(v)}
             onToggleColorCodes={(v: boolean) => setColorCodesVisible(v)}
+            onNavigateToYT={handleNavigateToYT}
+            onChangeVoiceMode={(m:'family'|'real'|'disable')=>setVoiceMode(m)}
           />
         )}
         {currentScreen === 'youtube' && (

@@ -1,12 +1,28 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
 import { styles } from './YTembedScreen.styles';
+// lazy-require navigation hook to avoid hard dependency on react-navigation
+let useNavigationHook: any = null;
+try { useNavigationHook = require('@react-navigation/native').useNavigation; } catch (e) { useNavigationHook = null; }
 
 interface YTembedScreenProps {
   onBack: () => void;
 }
 
 const YTembedScreen: React.FC<YTembedScreenProps> = ({ onBack }) => {
+  const navigation = useNavigationHook ? useNavigationHook() : null;
+
+  const handleBackToSettings = () => {
+    // Prefer navigating to the CLSetting screen explicitly so Back returns to settings
+    try {
+      if (navigation && navigation.navigate) {
+        navigation.navigate('CLSetting');
+        return;
+      }
+    } catch (e) { /* ignore */ }
+    // fallback to provided onBack prop if navigation is not available
+    if (onBack) onBack();
+  };
   // Replace with your actual YouTube video ID
   const youtubeVideoId = 'qIkLXRTS6Ik'; // Example video ID
   const youtubeUrl = `https://www.youtube.com/embed/${youtubeVideoId}`;
@@ -28,7 +44,7 @@ const YTembedScreen: React.FC<YTembedScreenProps> = ({ onBack }) => {
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton} 
-          onPress={onBack}
+          onPress={handleBackToSettings}
           activeOpacity={0.7}
         >
           <Text style={styles.backButtonText}>← Back</Text>

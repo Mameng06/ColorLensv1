@@ -20,14 +20,14 @@ export const styles = StyleSheet.create({
   permissionButton: { marginTop: 12, backgroundColor: '#2B7FFF', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8 },
   permissionButtonText: { color: '#fff', fontWeight: '700' },
   // Crosshair base: lines will be sized at render time to match the preview size
-  crosshairVertical: { position: 'absolute', width: 2, backgroundColor: '#fff' },
-  crosshairHorizontal: { position: 'absolute', height: 2, backgroundColor: '#fff' },
+  crosshairVertical: { position: 'absolute', width: 2, backgroundColor: '#fff', borderRadius: 0, elevation: 4 },
+  crosshairHorizontal: { position: 'absolute', height: 2, backgroundColor: '#fff', borderRadius: 0, elevation: 4 },
   // Container for the preview area (keeps even margins and centers inner preview)
   cameraPreviewContainer: { width: '100%', maxWidth: width - 32, alignSelf: 'center', aspectRatio: 4 / 3, borderRadius: 8, overflow: 'hidden', backgroundColor: '#000', position: 'relative' },
   // Inner preview fills the container (used for RNCamera or VisionCamera component)
   cameraInner: { width: '100%', height: '100%' },
   crosshairContainer: { position: 'absolute', width: 20, height: 20, justifyContent: 'center', alignItems: 'center', left: 0, top: 0 },
-  crosshairDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'red', borderWidth: 2, borderColor: '#fff' },
+  crosshairDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'red', borderWidth: 0, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
   infoArea: { padding: 20 },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   infoLabel: { fontSize: 14, color: '#333', width: 100 },
