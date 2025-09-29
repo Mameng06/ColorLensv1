@@ -101,7 +101,45 @@ const CLSetting: React.FC<CLSettingProps> = ({ onBack, colorCodesVisible=true, v
         {/* Submenu shown only when fabOpen is true */}
         {fabOpen && (
           <View style={styles.fabSubmenu}>
-            <TouchableOpacity style={styles.fabSubmenuItem} onPress={()=>{ setFabOpen(false); Alert.alert('About','About ColorLens placeholder'); }}>
+            <TouchableOpacity
+              style={styles.fabSubmenuItem}
+              onPress={() => {
+                setFabOpen(false);
+                Alert.alert(
+                  'About ColorLens',
+                  `🎨 ColorLens is a lightweight color detection tool that lets you identify colors in the real world or from photos.
+📷 Use your device camera for live scanning or 📁 upload an image — then tap to detect the color.
+The app shows the hex code, color family, and the actual name of the color, and can even 🔊 speak the result aloud for accessibility.
+
+🖼️ When you upload a photo, you can enter Adjust mode to move the image so the area you want to detect sits under the crosshair 🎯.
+✅ Tap Done to lock the image, then tap to detect colors.
+
+🔒 All sampling is performed locally on your device — images are not uploaded to any server by default.
+
+✨ Key Features:
+
+📸 Live camera sampling
+
+🖼️ Upload & pan/adjust images
+
+🧾 Hex code display
+
+🧩 Color family & name detection
+
+🔈 Optional voice feedback for accessibility
+
+🔐 Privacy & Permissions:
+
+Camera and photo library access are required only for their respective features.
+Your images and sampling data are processed entirely on-device and are never shared.
+
+💬 Support & Feedback:
+
+For bug reports, feature requests, or help, contact us at:
+📧 colorlens@supportteam.com`
+                );
+              }}
+            >
               <Text style={styles.fabSubmenuIcon}>?</Text>
               <Text style={styles.fabSubmenuText} numberOfLines={1} ellipsizeMode="tail">About</Text>
             </TouchableOpacity>
@@ -129,3 +167,6 @@ const CLSetting: React.FC<CLSettingProps> = ({ onBack, colorCodesVisible=true, v
 };
 
 export default CLSetting;
+
+// AboutModal removed: using Alert.alert for About text
+

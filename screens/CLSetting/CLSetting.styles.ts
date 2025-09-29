@@ -38,4 +38,5 @@ export const styles = StyleSheet.create({
   fabMain: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#6A46FF', justifyContent: 'center', alignItems: 'center', elevation: 6 },
   fabMainIcon: { color: '#fff', fontSize: 26, fontWeight: '700' },
   backIconImage: { width: 18, height: 18, tintColor: '#fff', resizeMode: 'contain' },
+  // modal styles removed — using Alert.alert for About text
 });
