@@ -54,6 +54,6 @@ export const styles = StyleSheet.create({
   adjustButtonContent: { flexDirection: 'row', alignItems: 'center' },
   adjustIcon: { width: 18, height: 18, marginRight: 8, tintColor: '#6A0DAF', resizeMode: 'contain' },
   adjustText: { color: '#6A0DAF', fontWeight: '700', fontSize: 14 },
-  adjustHelp: { marginTop: 8, paddingHorizontal: 12 },
-  adjustHelpText: { color: '#444', fontSize: 13, textAlign: 'left' },
+  adjustHelp: { marginTop: 8, paddingHorizontal: 12, backgroundColor: '#FF8C2B', paddingVertical: 10, borderRadius: 8, alignSelf: 'stretch' },
+  adjustHelpText: { color: '#fff', fontSize: 13, textAlign: 'left', fontWeight: '600' },
 });

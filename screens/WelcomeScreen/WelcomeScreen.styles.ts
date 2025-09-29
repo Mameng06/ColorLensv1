@@ -27,6 +27,13 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 28,
   },
+  connectedText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#2B7FFF',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   buttonContainer: {
     paddingHorizontal: 40,
     paddingBottom: 50,
