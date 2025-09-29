@@ -47,7 +47,7 @@ const CLSetting: React.FC<CLSettingProps> = ({ onBack, colorCodesVisible=true, v
           <View style={styles.rowLeft}>
             <Text style={styles.label}>Display Hex Color Codes</Text>
             <Text style={styles.note}>on by default</Text>
-                <Image source={ICONS.YTicon} style={[styles.fabSubmenuIcon, styles.fabSubmenuIconImage]} />
+                
           </View>
           <Switch value={localColorCodesVisible} onValueChange={(v)=>{ setLocalColorCodesVisible(v); onToggleColorCodes && onToggleColorCodes(v); }} />
         </View>
