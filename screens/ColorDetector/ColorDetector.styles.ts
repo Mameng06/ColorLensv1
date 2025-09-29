@@ -41,4 +41,11 @@ export const styles = StyleSheet.create({
   unfreezeButton: { marginTop: 14, backgroundColor: '#2B7FFF', paddingVertical: 16, paddingHorizontal: 18, borderRadius: 10, alignItems: 'center' },
   freezeButtonText: { color: '#fff', fontWeight: '700', fontSize: 18 },
   backIconImage: { width: 18, height: 18, tintColor: '#fff', resizeMode: 'contain' },
+  uploadRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 },
+  // Make upload button violet and provide space for an icon on the left
+  uploadButton: { backgroundColor: '#6A0DAF', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8 },
+  uploadButtonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  uploadIcon: { width: 20, height: 20, marginRight: 8, tintColor: '#fff', resizeMode: 'contain' },
+  uploadButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  thumbnail: { width: 64, height: 64, borderRadius: 8, marginLeft: 12, borderWidth: 1, borderColor: '#EEE' },
 });

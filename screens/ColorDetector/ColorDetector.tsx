@@ -46,6 +46,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
   const previewRef = useRef<any>(null);
   const cameraContainerRef = useRef<any>(null);
   const [previewSize, setPreviewSize] = useState<{width:number,height:number} | null>(null);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   // throttle live speech so we don't spam the user when live detection updates rapidly
   const lastSpokenRef = useRef<number>(0);
   const LIVE_SPEAK_COOLDOWN = 1200; // ms
@@ -161,6 +162,8 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
       setCrosshairPos(null);
       // clear frozen snapshot when unfreezing
       setFrozenSnapshot(null);
+      // clear any uploaded image so camera preview resumes
+      setSelectedImageUri(null);
     } else {
       // when freezing, set crosshair to center initially
       // center will be computed based on preview size; fallback to center of cameraArea via styles
@@ -249,6 +252,48 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
     }
   };
 
+  // Pick an image from the phone's library and treat it as a sampled frame.
+  const pickImage = async () => {
+    try {
+      // Lazy-require so the project doesn't hard-depend on the native module at build-time
+      let ImagePicker: any = null;
+      try { ImagePicker = require('react-native-image-picker'); } catch (err) { ImagePicker = null; }
+      if (!ImagePicker) {
+        Alert.alert('Image Picker', 'Image picker not installed. Install react-native-image-picker to enable this feature.');
+        return;
+      }
+
+      // Use the callback API since different versions expose different shapes
+      ImagePicker.launchImageLibrary({ mediaType: 'photo' }, (response: any) => {
+        try {
+          if (!response) return;
+          if (response.didCancel) return;
+          // `assets` is the modern response shape
+          const uri = (response.assets && response.assets[0] && response.assets[0].uri) || response.uri || null;
+          if (!uri) return;
+          setSelectedImageUri(uri);
+          // For now, simulate sampling by picking a random color (replace with real image sampling later)
+          const sampled = getRandomColor();
+          setDetected(sampled);
+          setFrozenSnapshot(sampled);
+          setFreeze(true);
+          // speak sample immediately if allowed
+          if (voiceEnabled && voiceMode !== 'disable') {
+            try {
+              const textToSpeak = voiceMode === 'real' ? sampled.realName : sampled.family;
+              speak(textToSpeak);
+            } catch (err) { /* ignore */ }
+          }
+        } catch (innerErr) {
+          console.log('image pick callback failed', innerErr);
+        }
+      });
+    } catch (err) {
+      console.log('pickImage failed', err);
+      Alert.alert('Image Picker', 'Failed to open image picker.');
+    }
+  };
+
     // Compute the center point used by the crosshair lines.
     // When frame is frozen and the user has moved the crosshair, use that position.
     // Otherwise use the visual center of the preview.
@@ -276,8 +321,19 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
         <View style={styles.cameraArea}>
           {/* preview wrapper measured for crosshair coordinate mapping */}
           <View style={styles.previewWrapper}>
-          {/* Prefer react-native-camera RNCamera if present */}
-          {RNCamera ? (
+          {/* If the user has uploaded an image, display it in the preview area instead of the live camera */}
+          {selectedImageUri ? (
+            <View ref={(el)=>{ cameraContainerRef.current = el; previewRef.current = el; }} style={styles.cameraPreviewContainer} onLayout={(e)=>{
+                      try {
+                        const { width: pw, height: ph } = e.nativeEvent.layout;
+                        previewLayout.current.width = pw;
+                        previewLayout.current.height = ph;
+                        setPreviewSize({ width: pw, height: ph });
+                      } catch (innerErr) { /* ignore */ }
+            }}>
+              <Image source={{ uri: selectedImageUri }} style={[styles.cameraInner, { resizeMode: 'cover' }]} />
+            </View>
+          ) : RNCamera ? (
             <View ref={(el)=>{ cameraContainerRef.current = el; previewRef.current = el; }} style={styles.cameraPreviewContainer} onLayout={(e)=>{
                       try {
                         const { width: pw, height: ph } = e.nativeEvent.layout;
@@ -437,6 +493,19 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
             <Text style={styles.infoValue}>{displayDetected?.realName ?? '—'}</Text>
           </View>
         )}
+
+        {/* Upload image from library (samples a color and freezes) */}
+        <View style={styles.uploadRow}>
+          <TouchableOpacity style={styles.uploadButton} onPress={pickImage} activeOpacity={0.8}>
+            <View style={styles.uploadButtonContent}>
+              <Image source={ICONS.UploadIcon} style={styles.uploadIcon} />
+              <Text style={styles.uploadButtonText}>Upload Image</Text>
+            </View>
+          </TouchableOpacity>
+          {selectedImageUri && (
+            <Image source={{ uri: selectedImageUri }} style={styles.thumbnail} />
+          )}
+        </View>
 
         <TouchableOpacity style={[styles.freezeButton, freeze && styles.unfreezeButton]} onPress={toggleFreeze} activeOpacity={0.8}>
           <Text style={styles.freezeButtonText}>{freeze ? 'Unfreeze' : 'Freeze Frame'}</Text>
