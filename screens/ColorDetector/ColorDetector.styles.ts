@@ -4,10 +4,10 @@ const { width } = Dimensions.get('window');
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16 },
-  backButton: { padding: 8 },
-  backText: { fontSize: 24 },
-  settingsButton: { padding: 8 },
-  settingsText: { fontSize: 20 },
+  backButton: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
+  backText: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  settingsButton: { paddingVertical: 10, paddingHorizontal: 10, borderRadius: 6, minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  settingsText: { fontSize: 22 },
   // Camera area holds the preview and crosshair. position: 'relative' so absolute children are positioned correctly.
   // Camera area holds the preview and crosshair. position: 'relative' so absolute children are positioned correctly.
   // Add horizontal padding so the preview sits visually centered with even white space.
@@ -16,9 +16,9 @@ export const styles = StyleSheet.create({
   // Responsive preview: fill available width inside the cameraArea padding, but don't exceed screen width minus padding
   cameraPreview: { width: '100%', maxWidth: width - 32, alignSelf: 'center', aspectRatio: 4 / 3, borderRadius: 8, overflow: 'hidden', backgroundColor: '#000', position: 'relative' },
   cameraFallback: { backgroundColor: '#F2F2F2', justifyContent: 'center', alignItems: 'center', width: '100%', maxWidth: width - 32, aspectRatio: 4 / 3, borderRadius: 8 },
-  cameraFallbackText: { color: '#666', fontSize: 14 },
-  permissionButton: { marginTop: 12, backgroundColor: '#2B7FFF', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8 },
-  permissionButtonText: { color: '#fff', fontWeight: '700' },
+  cameraFallbackText: { color: '#666', fontSize: 16 },
+  permissionButton: { marginTop: 14, backgroundColor: '#2B7FFF', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10 },
+  permissionButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   // Crosshair base: lines will be sized at render time to match the preview size
   crosshairVertical: { position: 'absolute', width: 2, backgroundColor: '#fff', borderRadius: 0, elevation: 4 },
   crosshairHorizontal: { position: 'absolute', height: 2, backgroundColor: '#fff', borderRadius: 0, elevation: 4 },
@@ -35,8 +35,10 @@ export const styles = StyleSheet.create({
   crosshairDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'red', borderWidth: 0, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
   infoArea: { padding: 20 },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  infoLabel: { fontSize: 14, color: '#333', width: 100 },
-  infoValue: { fontSize: 20, fontWeight: '700', color: '#000' },
-  freezeButton: { marginTop: 12, backgroundColor: '#FF8C2B', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
-  freezeButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  infoLabel: { fontSize: 16, color: '#333', width: 110 },
+  infoValue: { fontSize: 22, fontWeight: '700', color: '#000' },
+  freezeButton: { marginTop: 14, backgroundColor: '#FF8C2B', paddingVertical: 16, paddingHorizontal: 18, borderRadius: 10, alignItems: 'center' },
+  unfreezeButton: { marginTop: 14, backgroundColor: '#2B7FFF', paddingVertical: 16, paddingHorizontal: 18, borderRadius: 10, alignItems: 'center' },
+  freezeButtonText: { color: '#fff', fontWeight: '700', fontSize: 18 },
+  backIconImage: { width: 18, height: 18, tintColor: '#fff', resizeMode: 'contain' },
 });

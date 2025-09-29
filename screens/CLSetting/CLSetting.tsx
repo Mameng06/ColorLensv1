@@ -37,7 +37,9 @@ const CLSetting: React.FC<CLSettingProps> = ({ onBack, colorCodesVisible=true, v
 
   return (
     <View style={styles.container}>
-  <TouchableOpacity onPress={saveAndBack} style={styles.backButton}><Text style={styles.backText}>←</Text></TouchableOpacity>
+  <TouchableOpacity onPress={saveAndBack} style={styles.backButton} hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}>
+    <Image source={ICONS.ARROWicon} style={styles.backIconImage} />
+  </TouchableOpacity>
       <ScrollView contentContainerStyle={styles.contentContainer} style={styles.scrollView}>
         <Text style={styles.title}>Settings</Text>
 

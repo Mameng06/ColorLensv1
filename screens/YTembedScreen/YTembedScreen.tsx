@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, Image } from 'react-native';
+import { ICONS } from '../../Images';
 import { styles } from './YTembedScreen.styles';
 // lazy-require navigation hook to avoid hard dependency on react-navigation
 // Always provide a function for the navigation hook so we can call it unconditionally.
@@ -49,13 +50,16 @@ const YTembedScreen: React.FC<YTembedScreenProps> = ({ onBack }) => {
       
       {/* Header with Back Button */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={handleBackToSettings}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBackToSettings}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, left: 12, bottom: 12, right: 12 }}
+          >
+            <Image source={ICONS.ARROWicon} style={styles.backIconImage} />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.headerTitle}>Video Tutorial</Text>
       </View>
       

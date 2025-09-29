@@ -2,8 +2,8 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  backButton: { padding: 8 },
-  backText: { fontSize: 24 },
+  backButton: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
+  backText: { fontSize: 20, fontWeight: '700', color: '#fff' },
   // contentContainer used for ScrollView content, less vertically centered so top gap is smaller
   content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   contentContainer: { paddingTop: 8, paddingBottom: 40, paddingHorizontal: 12 },
@@ -37,4 +37,5 @@ export const styles = StyleSheet.create({
   fabSubmenuText: { fontWeight: '600', flexShrink: 1, flexWrap: 'nowrap' },
   fabMain: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#6A46FF', justifyContent: 'center', alignItems: 'center', elevation: 6 },
   fabMainIcon: { color: '#fff', fontSize: 26, fontWeight: '700' },
+  backIconImage: { width: 18, height: 18, tintColor: '#fff', resizeMode: 'contain' },
 });

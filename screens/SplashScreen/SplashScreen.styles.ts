@@ -25,10 +25,10 @@ export const styles = StyleSheet.create({
     height: 160,
   },
   description: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#222222',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 22,
     fontWeight: '400',
   },
 });

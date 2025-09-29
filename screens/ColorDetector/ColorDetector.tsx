@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, PermissionsAndroid } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, PermissionsAndroid, Image } from 'react-native';
+import { ICONS } from '../../Images';
 import { styles } from './ColorDetector.styles';
 import { getRandomColor } from './ColorDetectorLogic';
 import { speak } from '../../utils/tts';
@@ -263,7 +264,9 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}><Text style={styles.backText}>←</Text></TouchableOpacity>
+        <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={{ top: 10, left: 10, bottom: 10, right: 10 }}>
+          <Image source={ICONS.ARROWicon} style={styles.backIconImage} />
+        </TouchableOpacity>
   <TouchableOpacity onPress={() => { openSettings(); }} style={styles.settingsButton}><Text style={styles.settingsText}>⚙️</Text></TouchableOpacity>
         {/* spacer for header actions */}
       </View>
@@ -348,8 +351,8 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
             </View>
           )}
 
-            {/* Crosshair: full white lines (vertical + horizontal) placed relative to preview */}
-                  <View pointerEvents="none" style={[styles.absoluteOverlay, { width: previewSize?.width ?? '100%', height: previewSize?.height ?? '100%' }]}>
+    {/* Crosshair: full white lines (vertical + horizontal) placed relative to preview */}
+      <View pointerEvents="none" style={[styles.absoluteOverlay, { width: previewSize?.width ?? '100%', height: previewSize?.height ?? '100%' }]}>
               {previewSize && (
                 <>
                   {/* Vertical line: centered, height = previewHeight * CROSSHAIR_LENGTH_FACTOR */}
@@ -409,7 +412,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
                   </View>
                 )
               )}
-            </View>
+    </View>
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -435,7 +438,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
           </View>
         )}
 
-        <TouchableOpacity style={styles.freezeButton} onPress={toggleFreeze} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.freezeButton, freeze && styles.unfreezeButton]} onPress={toggleFreeze} activeOpacity={0.8}>
           <Text style={styles.freezeButtonText}>{freeze ? 'Unfreeze' : 'Freeze Frame'}</Text>
         </TouchableOpacity>
         {/* end info area */}

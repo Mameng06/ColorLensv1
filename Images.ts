@@ -19,7 +19,8 @@ export const IMAGES = {
 } as const;
 
 export const ICONS = {
-  YTicon: require('./img/YTsvg.svg'),
+  YTicon: require('./img/YoutubeIcon.png'),
+  ARROWicon: require('./img/ArrowIcon.png'),
   // UI Icons (when you add them)
   // BACK_ARROW: require('../../assets/icons/back-arrow.png'),
   // SETTINGS: require('../../assets/icons/settings.png'),
