@@ -391,11 +391,12 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
 
   const onPreviewTap = (evt: any) => {
     if (selectedImageUri && !adjusting) {
-      // when image present and not adjusting, sample at center
-      sampleColorAtCenter();
+      // When an uploaded image is present and not adjusting, treat taps like screen presses
+      // so the crosshair moves to the tapped location (onScreenPress handles freeze and sampling).
+      onScreenPress(evt);
       return;
     }
-    // fallback to existing onScreenPress behavior
+    // fallback to existing onScreenPress behavior for camera taps
     onScreenPress(evt);
   };
 
@@ -422,7 +423,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
       </View>
 
       {/* Camera area (placeholder image) */}
-      <TouchableWithoutFeedback onPress={onScreenPress}>
+      <TouchableWithoutFeedback onPress={onPreviewTap}>
         <View style={styles.cameraArea}>
           {/* preview wrapper measured for crosshair coordinate mapping */}
           <View style={styles.previewWrapper}>
@@ -442,7 +443,8 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
               {/* If we computed a scaled image size, render the image at that size and center it. */}
               {imageScaledSize && previewSize ? (
                 <Animated.View
-                  {...(panResponder.current ? panResponder.current.panHandlers : {})}
+                  {...(adjusting && panResponder.current ? panResponder.current.panHandlers : {})}
+                  pointerEvents={adjusting ? 'auto' : 'none'}
                   style={{
                     position: 'absolute',
                     left: Math.round((previewSize.width - imageScaledSize.w) / 2),
@@ -456,7 +458,8 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
                 </Animated.View>
               ) : (
                 <Animated.View
-                  {...(panResponder.current ? panResponder.current.panHandlers : {})}
+                  {...(adjusting && panResponder.current ? panResponder.current.panHandlers : {})}
+                  pointerEvents={adjusting ? 'auto' : 'none'}
                   style={[ { transform: [{ translateX: pan.x }, { translateY: pan.y }] , width: '100%', height: '100%' }]}
                 >
                   <Image source={{ uri: selectedImageUri }} style={[styles.cameraInner, { resizeMode: 'cover' }]} />
