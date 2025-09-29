@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, PermissionsAndroid, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, PermissionsAndroid, Image, PanResponder, Animated } from 'react-native';
 import { ICONS } from '../../Images';
 import { styles } from './ColorDetector.styles';
 import { getRandomColor } from './ColorDetectorLogic';
@@ -19,6 +19,10 @@ const CROSSHAIR_DOT_SIZE = 10; // px diameter of center dot (visual size)
 const CROSSHAIR_DOT_BORDER = 2; // px border around dot (white ring)
 // Container size should include the dot plus border so centering math is consistent across devices
 const CROSSHAIR_CONTAINER_SIZE = CROSSHAIR_DOT_SIZE + CROSSHAIR_DOT_BORDER * 2;
+
+// How far from the top of the preview the Adjust pill should sit (fraction of preview height)
+// Increase this to move the pill lower. For example: 0.06 = 6% down
+const ADJUST_TOP_FACTOR = 0.06;
 
 interface ColorDetectorProps {
   onBack: () => void;
@@ -47,6 +51,15 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
   const cameraContainerRef = useRef<any>(null);
   const [previewSize, setPreviewSize] = useState<{width:number,height:number} | null>(null);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  // adjust mode state
+  const [adjusting, setAdjusting] = useState(false);
+  // pan for dragging uploaded image when in adjust mode
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const panResponder = useRef<any>(null);
+  // Track natural and scaled sizes for the uploaded image so we can
+  // scale it to cover the preview and clamp pan bounds when dragging.
+  const [imageNaturalSize, setImageNaturalSize] = useState<{w:number,h:number} | null>(null);
+  const [imageScaledSize, setImageScaledSize] = useState<{w:number,h:number} | null>(null);
   // throttle live speech so we don't spam the user when live detection updates rapidly
   const lastSpokenRef = useRef<number>(0);
   const LIVE_SPEAK_COOLDOWN = 1200; // ms
@@ -269,8 +282,18 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
           if (!response) return;
           if (response.didCancel) return;
           // `assets` is the modern response shape
-          const uri = (response.assets && response.assets[0] && response.assets[0].uri) || response.uri || null;
+              const uri = (response.assets && response.assets[0] && response.assets[0].uri) || response.uri || null;
           if (!uri) return;
+              // Try to obtain natural image dimensions so we can scale it to cover the preview
+              try {
+                Image.getSize(uri, (w, h) => {
+                  setImageNaturalSize({ w, h });
+                }, (_err) => {
+                  // ignore
+                });
+              } catch (_err) {
+                // ignore
+              }
           setSelectedImageUri(uri);
           // For now, simulate sampling by picking a random color (replace with real image sampling later)
           const sampled = getRandomColor();
@@ -292,6 +315,88 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
       console.log('pickImage failed', err);
       Alert.alert('Image Picker', 'Failed to open image picker.');
     }
+  };
+
+  // initialize pan responder for dragging uploaded image when adjusting
+  useEffect(() => {
+    panResponder.current = PanResponder.create({
+      onStartShouldSetPanResponder: () => adjusting,
+      onMoveShouldSetPanResponder: () => adjusting,
+      onPanResponderGrant: () => {
+        try {
+          pan.setOffset({ x: (pan.x as any).__getValue ? (pan.x as any).__getValue() : 0, y: (pan.y as any).__getValue ? (pan.y as any).__getValue() : 0 });
+        } catch (_e) {
+          // ignore
+        }
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+        clampPanToBounds();
+      },
+      onPanResponderTerminate: () => {
+        pan.flattenOffset();
+        clampPanToBounds();
+      }
+    });
+  }, [adjusting, imageScaledSize, previewSize]);
+
+  // compute scaled image size (cover) whenever preview or natural image size changes
+  useEffect(() => {
+    if (!previewSize || !imageNaturalSize) return;
+    const pw = previewSize.width;
+    const ph = previewSize.height;
+    const iw = imageNaturalSize.w;
+    const ih = imageNaturalSize.h;
+    const scale = Math.max(pw / iw, ph / ih);
+    setImageScaledSize({ w: Math.round(iw * scale), h: Math.round(ih * scale) });
+    // center image
+    pan.setValue({ x: 0, y: 0 });
+  }, [previewSize, imageNaturalSize]);
+
+  const clampPanToBounds = () => {
+    if (!previewSize || !imageScaledSize) return;
+    const maxOffsetX = Math.max(0, (imageScaledSize.w - previewSize.width) / 2);
+    const maxOffsetY = Math.max(0, (imageScaledSize.h - previewSize.height) / 2);
+    const curX = (pan.x as any).__getValue ? (pan.x as any).__getValue() : 0;
+    const curY = (pan.y as any).__getValue ? (pan.y as any).__getValue() : 0;
+    let clampedX = curX;
+    let clampedY = curY;
+    if (curX > maxOffsetX) clampedX = maxOffsetX;
+    if (curX < -maxOffsetX) clampedX = -maxOffsetX;
+    if (curY > maxOffsetY) clampedY = maxOffsetY;
+    if (curY < -maxOffsetY) clampedY = -maxOffsetY;
+    if (clampedX !== curX || clampedY !== curY) {
+      Animated.spring(pan, { toValue: { x: clampedX, y: clampedY }, useNativeDriver: false }).start();
+    }
+  };
+
+  const onAdjustToggle = () => {
+    setAdjusting((v) => {
+      const next = !v;
+      if (!next) setTimeout(() => clampPanToBounds(), 10);
+      return next;
+    });
+  };
+
+  const sampleColorAtCenter = () => {
+    const sampled = getRandomColor();
+    setDetected(sampled);
+    setFrozenSnapshot(sampled);
+    if (voiceEnabled && voiceMode !== 'disable') {
+      try { speak(voiceMode === 'real' ? sampled.realName : sampled.family); } catch (_e) {}
+    }
+  };
+
+  const onPreviewTap = (evt: any) => {
+    if (selectedImageUri && !adjusting) {
+      // when image present and not adjusting, sample at center
+      sampleColorAtCenter();
+      return;
+    }
+    // fallback to existing onScreenPress behavior
+    onScreenPress(evt);
   };
 
     // Compute the center point used by the crosshair lines.
@@ -331,7 +436,32 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
                         setPreviewSize({ width: pw, height: ph });
                       } catch (innerErr) { /* ignore */ }
             }}>
-              <Image source={{ uri: selectedImageUri }} style={[styles.cameraInner, { resizeMode: 'cover' }]} />
+              {/* When an uploaded image is present we render it as an Animated.View so it can be
+                  dragged while in adjust mode. We keep resizeMode: 'cover' semantics by computing
+                  the scaled image size in an effect and letting the image overflow the preview bounds. */}
+              {/* If we computed a scaled image size, render the image at that size and center it. */}
+              {imageScaledSize && previewSize ? (
+                <Animated.View
+                  {...(panResponder.current ? panResponder.current.panHandlers : {})}
+                  style={{
+                    position: 'absolute',
+                    left: Math.round((previewSize.width - imageScaledSize.w) / 2),
+                    top: Math.round((previewSize.height - imageScaledSize.h) / 2),
+                    width: Math.round(imageScaledSize.w),
+                    height: Math.round(imageScaledSize.h),
+                    transform: [{ translateX: pan.x }, { translateY: pan.y }],
+                  }}
+                >
+                  <Image source={{ uri: selectedImageUri }} style={{ width: Math.round(imageScaledSize.w), height: Math.round(imageScaledSize.h), resizeMode: 'cover' }} />
+                </Animated.View>
+              ) : (
+                <Animated.View
+                  {...(panResponder.current ? panResponder.current.panHandlers : {})}
+                  style={[ { transform: [{ translateX: pan.x }, { translateY: pan.y }] , width: '100%', height: '100%' }]}
+                >
+                  <Image source={{ uri: selectedImageUri }} style={[styles.cameraInner, { resizeMode: 'cover' }]} />
+                </Animated.View>
+              )}
             </View>
           ) : RNCamera ? (
             <View ref={(el)=>{ cameraContainerRef.current = el; previewRef.current = el; }} style={styles.cameraPreviewContainer} onLayout={(e)=>{
@@ -470,6 +600,22 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
               )}
     </View>
           </View>
+          {/* Adjust control rendered as a sibling (outside the clipped preview container) */}
+          {selectedImageUri && (
+            <View style={styles.adjustArea} pointerEvents="box-none">
+              <TouchableOpacity style={styles.adjustButton} onPress={onAdjustToggle} activeOpacity={0.85}>
+                <View style={styles.adjustButtonContent}>
+                  <Image source={ICONS.HANDicon} style={styles.adjustIcon} />
+                  <Text style={styles.adjustText}>{adjusting ? 'Done' : 'Adjust Image'}</Text>
+                </View>
+              </TouchableOpacity>
+              {adjusting && (
+                <View style={styles.adjustHelp}>
+                  <Text style={styles.adjustHelpText}>Drag the image to position it so the area you want to sample is visible under the crosshair. Tap done when finished.</Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
       </TouchableWithoutFeedback>
 

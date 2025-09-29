@@ -48,4 +48,12 @@ export const styles = StyleSheet.create({
   uploadIcon: { width: 20, height: 20, marginRight: 8, tintColor: '#fff', resizeMode: 'contain' },
   uploadButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   thumbnail: { width: 64, height: 64, borderRadius: 8, marginLeft: 12, borderWidth: 1, borderColor: '#EEE' },
+  // Adjust control area (renders outside the clipped preview so it remains visible)
+  adjustArea: { width: '100%', alignItems: 'flex-end', marginTop: 8, paddingRight: 8 },
+  adjustButton: { backgroundColor: '#fff', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 24, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6 },
+  adjustButtonContent: { flexDirection: 'row', alignItems: 'center' },
+  adjustIcon: { width: 18, height: 18, marginRight: 8, tintColor: '#6A0DAF', resizeMode: 'contain' },
+  adjustText: { color: '#6A0DAF', fontWeight: '700', fontSize: 14 },
+  adjustHelp: { marginTop: 8, paddingHorizontal: 12 },
+  adjustHelpText: { color: '#444', fontSize: 13, textAlign: 'left' },
 });
