@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
@@ -26,6 +26,11 @@ export const styles = StyleSheet.create({
   cameraPreviewContainer: { width: '100%', maxWidth: width - 32, alignSelf: 'center', aspectRatio: 4 / 3, borderRadius: 8, overflow: 'hidden', backgroundColor: '#000', position: 'relative' },
   // Inner preview fills the container (used for RNCamera or VisionCamera component)
   cameraInner: { width: '100%', height: '100%' },
+  previewWrapper: { width: '100%', alignItems: 'center', position: 'relative' },
+  debugText: { fontSize: 12, color: '#444' },
+  debugBlock: { marginTop: 8 },
+  absoluteOverlay: { position: 'absolute', left: 0, top: 0 },
+  fillerBar: { position: 'absolute', backgroundColor: '#fff' },
   crosshairContainer: { position: 'absolute', width: 20, height: 20, justifyContent: 'center', alignItems: 'center', left: 0, top: 0 },
   crosshairDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'red', borderWidth: 0, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
   infoArea: { padding: 20 },

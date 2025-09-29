@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, StyleSheet, TouchableWithoutFeedback, GestureResponderEvent, Platform, PermissionsAndroid } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, TouchableWithoutFeedback, Platform, PermissionsAndroid } from 'react-native';
 import { styles } from './ColorDetector.styles';
 import { getRandomColor } from './ColorDetectorLogic';
 import { speak } from '../../utils/tts';
@@ -7,8 +7,8 @@ import { speak } from '../../utils/tts';
 // Optional camera modules (lazy-require)
 let RNCamera: any = null;
 let VisionCamera: any = null;
-try { RNCamera = require('react-native-camera').RNCamera; } catch (e) { RNCamera = null; }
-try { VisionCamera = require('react-native-vision-camera'); } catch (e) { VisionCamera = null; }
+try { RNCamera = require('react-native-camera').RNCamera; } catch (err) { RNCamera = null; }
+try { VisionCamera = require('react-native-vision-camera'); } catch (err) { VisionCamera = null; }
 
 // Crosshair config: tweak these to change length (factor of preview), thickness (px), and dot size
 const CROSSHAIR_LENGTH_FACTOR = 0.5; // 0..1 portion of preview dimension (0.5 = 50%)
@@ -25,16 +25,18 @@ interface ColorDetectorProps {
   voiceEnabled?: boolean;
   colorCodesVisible?: boolean;
   voiceMode?: 'family' | 'real' | 'disable';
+  showFamily?: boolean;
+  showRealName?: boolean;
 }
 
-const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voiceEnabled=true, colorCodesVisible=true }) => {
+const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voiceEnabled=true, colorCodesVisible=true, voiceMode='family', showFamily=true, showRealName=true }) => {
   // detected: user-selected sample while frozen (set on tap)
   const [detected, setDetected] = useState<{family:string,hex:string,realName:string} | null>(null);
   // liveDetected: continuously-updated live sample shown while not frozen
   const [liveDetected, setLiveDetected] = useState<{family:string,hex:string,realName:string} | null>(null);
   // frozenSnapshot: snapshot of the live sample at the moment the user froze the frame
   const [frozenSnapshot, setFrozenSnapshot] = useState<{family:string,hex:string,realName:string} | null>(null);
-  const [running, setRunning] = useState(true);
+  const [_running, setRunning] = useState(true);
   const [freeze, setFreeze] = useState(false);
   const [crosshairPos, setCrosshairPos] = useState<{x:number,y:number}|null>(null);
   const intervalRef = useRef<any>(null);
@@ -51,6 +53,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
   const [availableDevices, setAvailableDevices] = useState<any[] | null>(null);
   const availableDevice = availableDevices ? availableDevices.find((d:any) => d.position === 'back') ?? availableDevices[0] : null;
 
+  // Start detection and check permissions on mount
   useEffect(() => {
     // Check Android permission using PermissionsAndroid for reliability
     const checkPermission = async () => {
@@ -70,8 +73,8 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
             setCameraPermission(null);
           }
         }
-      } catch (e) {
-        console.log('permission check failed', e);
+      } catch (err) {
+        console.log('permission check failed', err);
         setCameraPermission(null);
       }
     };
@@ -79,6 +82,8 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
 
     startDetection();
     return () => stopDetection();
+    // startDetection/stopDetection are stable local functions (no external deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // When permission becomes authorized, try to query available devices explicitly
@@ -101,29 +106,31 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
           console.log('VisionCamera.Camera.getAvailableCameraDevices ->', list);
           return;
         }
-      } catch (e) {
-        console.log('discover devices failed', e);
+      } catch (err) {
+        console.log('discover devices failed', err);
       }
     };
     discover();
   }, [cameraPermission]);
 
-
   // Speak when a new color family is detected
   useEffect(() => {
     // Only speak automatically while not frozen — when frozen we speak only on user taps
     if (!liveDetected || !voiceEnabled || freeze) return;
+    if (voiceMode === 'disable') return;
     try {
       const now = Date.now();
       if (now - lastSpokenRef.current < LIVE_SPEAK_COOLDOWN) return;
-      const ok = speak(liveDetected.family);
+      const textToSpeak = voiceMode === 'real' ? liveDetected.realName : liveDetected.family;
+      const ok = speak(textToSpeak);
       lastSpokenRef.current = now;
-      if (!ok) Alert.alert('Color', liveDetected.family);
-    } catch (e) {
-      console.log('TTS speak failed', e);
-      Alert.alert('Color', liveDetected.family);
+      if (!ok) Alert.alert('Color', textToSpeak);
+    } catch (err) {
+      console.log('TTS speak failed', err);
+      const textToSpeak = voiceMode === 'real' ? liveDetected.realName : liveDetected.family;
+      Alert.alert('Color', textToSpeak);
     }
-  }, [liveDetected?.family, voiceEnabled, freeze]);
+  }, [liveDetected, voiceEnabled, freeze, voiceMode]);
 
   const startDetection = () => {
     stopDetection();
@@ -170,7 +177,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
               // Do NOT automatically sample or speak when freezing; user will tap to sample.
             });
           }
-        } catch (e) { setCrosshairPos(null); }
+        } catch (err) { setCrosshairPos(null); }
       }, 50);
     }
   };
@@ -197,12 +204,13 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
           // update frozen snapshot to reflect the user-selected sample for display
           setFrozenSnapshot(c);
           // speak immediately for taps while frozen (bypass live cooldown)
-          if (voiceEnabled) {
+          if (voiceEnabled && voiceMode !== 'disable') {
             try {
-              const ok = speak(c.family);
-              lastSpokenRef.current = Date.now();
-              if (!ok) Alert.alert('Color', c.family);
-            } catch (e) { /* ignore */ }
+                const textToSpeak = voiceMode === 'real' ? c.realName : c.family;
+                const ok = speak(textToSpeak);
+                lastSpokenRef.current = Date.now();
+                if (!ok) Alert.alert('Color', textToSpeak);
+              } catch (err) { /* ignore */ }
           }
         });
       }
@@ -235,8 +243,8 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
         const res = await VisionCamera.requestPermissions();
         setCameraPermission(res?.camera ?? 'denied');
       }
-    } catch (e) {
-      console.log('requestCameraPermission failed', e);
+    } catch (err) {
+      console.log('requestCameraPermission failed', err);
     }
   };
 
@@ -264,7 +272,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
       <TouchableWithoutFeedback onPress={onScreenPress}>
         <View style={styles.cameraArea}>
           {/* preview wrapper measured for crosshair coordinate mapping */}
-          <View style={{ width: '100%', alignItems: 'center', position: 'relative' }}>
+          <View style={styles.previewWrapper}>
           {/* Prefer react-native-camera RNCamera if present */}
           {RNCamera ? (
             <View ref={(el)=>{ cameraContainerRef.current = el; previewRef.current = el; }} style={styles.cameraPreviewContainer} onLayout={(e)=>{
@@ -273,7 +281,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
                         previewLayout.current.width = pw;
                         previewLayout.current.height = ph;
                         setPreviewSize({ width: pw, height: ph });
-                      } catch (err) { /* ignore */ }
+                      } catch (innerErr) { /* ignore */ }
             }}>
               <RNCamera
                 style={styles.cameraInner}
@@ -308,13 +316,13 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
                         previewLayout.current.width = pw;
                         previewLayout.current.height = ph;
                         setPreviewSize({ width: pw, height: ph });
-                      } catch (err) { /* ignore */ }
+                      } catch (innerErr) { /* ignore */ }
                     }}>
                       <CameraComp ref={cameraRef} style={styles.cameraInner} device={finalDevice} isActive={!freeze} />
                     </View>
                   );
-                } catch (e) {
-                  console.log('VisionCamera render error', e);
+                } catch (innerErr) {
+                  console.log('VisionCamera render error', innerErr);
                 }
               }
 
@@ -325,11 +333,11 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
                     On an emulator, enable a virtual camera (AVD settings) or run on a physical device.
                   </Text>
                   {/* Debug info */}
-                  <View style={{ marginTop: 8 }}>
-                    <Text style={{ fontSize: 12, color: '#444' }}>Debug: VisionCamera loaded: {VisionCamera ? 'yes' : 'no'}</Text>
-                    <Text style={{ fontSize: 12, color: '#444' }}>cameraPermission: {String(cameraPermission)}</Text>
+                  <View style={styles.debugBlock}>
+                    <Text style={styles.debugText}>Debug: VisionCamera loaded: {VisionCamera ? 'yes' : 'no'}</Text>
+                    <Text style={styles.debugText}>cameraPermission: {String(cameraPermission)}</Text>
                     {/* hook-derived device removed: using explicit discovery only */}
-                    <Text style={{ fontSize: 12, color: '#444' }}>availableDevices: {availableDevices ? JSON.stringify(availableDevices.map((d:any)=>({id:d.id,position:d.position}))) : 'null'}</Text>
+                    <Text style={styles.debugText}>availableDevices: {availableDevices ? JSON.stringify(availableDevices.map((d:any)=>({id:d.id,position:d.position}))) : 'null'}</Text>
                   </View>
                 </View>
               );
@@ -341,7 +349,7 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
           )}
 
             {/* Crosshair: full white lines (vertical + horizontal) placed relative to preview */}
-            <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: previewSize?.width ?? '100%', height: previewSize?.height ?? '100%' }}>
+                  <View pointerEvents="none" style={[styles.absoluteOverlay, { width: previewSize?.width ?? '100%', height: previewSize?.height ?? '100%' }]}>
               {previewSize && (
                 <>
                   {/* Vertical line: centered, height = previewHeight * CROSSHAIR_LENGTH_FACTOR */}
@@ -372,28 +380,8 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
                     ]}
                   />
                   {/* filler bars: drawn above the lines but beneath the dot to mask any seam */}
-                  <View
-                    pointerEvents="none"
-                    style={{
-                      position: 'absolute',
-                      left: Math.round(centerX) - Math.round((CROSSHAIR_CONTAINER_SIZE * 1.2) / 2),
-                      top: Math.round(centerY) - Math.round((CROSSHAIR_THICKNESS + 1) / 2),
-                      width: Math.round(CROSSHAIR_CONTAINER_SIZE * 1.2),
-                      height: CROSSHAIR_THICKNESS + 1,
-                      backgroundColor: '#fff',
-                    }}
-                  />
-                  <View
-                    pointerEvents="none"
-                    style={{
-                      position: 'absolute',
-                      left: Math.round(centerX) - Math.round((CROSSHAIR_THICKNESS + 1) / 2),
-                      top: Math.round(centerY) - Math.round((CROSSHAIR_CONTAINER_SIZE * 1.2) / 2),
-                      width: CROSSHAIR_THICKNESS + 1,
-                      height: Math.round(CROSSHAIR_CONTAINER_SIZE * 1.2),
-                      backgroundColor: '#fff',
-                    }}
-                  />
+                  <View pointerEvents="none" style={[styles.fillerBar, { left: Math.round(centerX) - Math.round((CROSSHAIR_CONTAINER_SIZE * 1.2) / 2), top: Math.round(centerY) - Math.round((CROSSHAIR_THICKNESS + 1) / 2), width: Math.round(CROSSHAIR_CONTAINER_SIZE * 1.2), height: CROSSHAIR_THICKNESS + 1 }]} />
+                  <View pointerEvents="none" style={[styles.fillerBar, { left: Math.round(centerX) - Math.round((CROSSHAIR_THICKNESS + 1) / 2), top: Math.round(centerY) - Math.round((CROSSHAIR_CONTAINER_SIZE * 1.2) / 2), width: CROSSHAIR_THICKNESS + 1, height: Math.round(CROSSHAIR_CONTAINER_SIZE * 1.2) }]} />
                 </>
               )}
 
@@ -428,20 +416,24 @@ const ColorDetector: React.FC<ColorDetectorProps> = ({ onBack, openSettings, voi
 
         {/* Info */}
         <View style={styles.infoArea}>
-          <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Family of:</Text>
-          <Text style={styles.infoValue}>{displayDetected?.family ?? '—'}</Text>
-        </View>
+          {showFamily && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Family of:</Text>
+              <Text style={styles.infoValue}>{displayDetected?.family ?? '—'}</Text>
+            </View>
+          )}
         {colorCodesVisible && (
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Hex:</Text>
             <Text style={styles.infoValue}>{displayDetected?.hex ?? '—'}</Text>
           </View>
         )}
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Real Name:</Text>
-          <Text style={styles.infoValue}>{displayDetected?.realName ?? '—'}</Text>
-        </View>
+        {showRealName && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Real Name:</Text>
+            <Text style={styles.infoValue}>{displayDetected?.realName ?? '—'}</Text>
+          </View>
+        )}
 
         <TouchableOpacity style={styles.freezeButton} onPress={toggleFreeze} activeOpacity={0.8}>
           <Text style={styles.freezeButtonText}>{freeze ? 'Unfreeze' : 'Freeze Frame'}</Text>

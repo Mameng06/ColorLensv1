@@ -41,6 +41,7 @@ export const styles = StyleSheet.create({
   webView: {
     flex: 1,
   },
+  webViewFallback: { justifyContent: 'center', alignItems: 'center' },
   infoContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,

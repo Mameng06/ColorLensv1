@@ -3,26 +3,21 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SplashScreen from './screens/SplashScreen/SplashScreen';
 import WelcomeScreen from './screens/WelcomeScreen/WelcomeScreen';
-// DecisionScreen removed; its FAB moved into CLSetting
 import YTembedScreen from './screens/YTembedScreen/YTembedScreen';
 import ColorDetector from './screens/ColorDetector/ColorDetector';
 import CLSetting from './screens/CLSetting/CLSetting';
-// Disabled for now - feature screens commented out to simplify development
-// import YTembedScreen from './screens/YTembedScreen/YTembedScreen';
-// import ColorDetector from './screens/ColorDetector/ColorDetector';
-// import CLSetting from './screens/CLSetting/CLSetting';
-// import CBCamera from './screens/CBCamera/CBCamera';
-// import SimulateCB from './screens/SimulateCB/SimulateCB.tsx';
 
 const App: React.FC = () => {
 
   const [currentScreen, setCurrentScreen] = useState<'splash' | 'welcome' | 'decision' | 'youtube' | 'main' | 'colorDetector' | 'settings' | 'cbc' | 'simulate'>('splash');
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [colorCodesVisible, setColorCodesVisible] = useState(true);
+  const [showFamily, setShowFamily] = useState(true);
+  const [showRealName, setShowRealName] = useState(true);
   const [voiceMode, setVoiceMode] = useState<'family' | 'real' | 'disable'>('family');
 
   const handleSplashFinish = () => {
@@ -45,11 +40,7 @@ const App: React.FC = () => {
     setCurrentScreen('settings');
   };
 
-  const handleDetectColors = () => {
-    // Navigate to the Color Detector screen
-    console.log('Navigating to ColorDetector screen');
-    setCurrentScreen('colorDetector');
-  };
+  // navigation helpers (used elsewhere)
 
   return (
     <SafeAreaProvider>
@@ -61,7 +52,15 @@ const App: React.FC = () => {
           <WelcomeScreen onNext={handleWelcomeNext} />
         )}
         {currentScreen === 'colorDetector' && (
-          <ColorDetector onBack={() => setCurrentScreen('welcome')} openSettings={() => setCurrentScreen('settings')} voiceEnabled={voiceEnabled} colorCodesVisible={colorCodesVisible} voiceMode={voiceMode} />
+          <ColorDetector
+            onBack={() => setCurrentScreen('welcome')}
+            openSettings={() => setCurrentScreen('settings')}
+            voiceEnabled={voiceEnabled}
+            colorCodesVisible={colorCodesVisible}
+            voiceMode={voiceMode}
+            showFamily={showFamily}
+            showRealName={showRealName}
+          />
         )}
         {currentScreen === 'settings' && (
           <CLSetting
@@ -69,8 +68,12 @@ const App: React.FC = () => {
             voiceEnabled={voiceEnabled}
             colorCodesVisible={colorCodesVisible}
             voiceMode={voiceMode}
+            showFamily={showFamily}
+            showRealName={showRealName}
             onToggleVoice={(v: boolean) => setVoiceEnabled(v)}
             onToggleColorCodes={(v: boolean) => setColorCodesVisible(v)}
+            onToggleShowFamily={(v: boolean) => setShowFamily(v)}
+            onToggleShowRealName={(v: boolean) => setShowRealName(v)}
             onNavigateToYT={handleNavigateToYT}
             onChangeVoiceMode={(m:'family'|'real'|'disable')=>setVoiceMode(m)}
           />
