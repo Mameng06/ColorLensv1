@@ -41,8 +41,8 @@ const App: React.FC = () => {
   };
 
   const handleBackFromYT = () => {
-    // DecisionScreen removed: return to ColorDetector
-    setCurrentScreen('colorDetector');
+    // Return to Settings (CLSetting) when leaving the YouTube screen
+    setCurrentScreen('settings');
   };
 
   const handleDetectColors = () => {
